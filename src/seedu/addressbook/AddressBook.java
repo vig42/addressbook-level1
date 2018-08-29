@@ -108,6 +108,10 @@ public class AddressBook {
     private static final String COMMAND_LIST_DESC = "Displays all persons as a list with index numbers.";
     private static final String COMMAND_LIST_EXAMPLE = COMMAND_LIST_WORD;
 
+    private static final String COMMAND_SORT_WORD = "sort";
+    private static final String COMMAND_SORT_DESC = "Displays all persons as a list in alphabetical order with index numbers.";
+    private static final String COMMAND_SORT_EXAMPLE = COMMAND_SORT_WORD;
+
     private static final String COMMAND_DELETE_WORD = "delete";
     private static final String COMMAND_DELETE_DESC = "Deletes a person identified by the index number used in "
                                                     + "the last find/list call.";
@@ -368,6 +372,8 @@ public class AddressBook {
             return executeFindPersons(commandArgs);
         case COMMAND_LIST_WORD:
             return executeListAllPersonsInAddressBook();
+        case COMMAND_SORT_WORD:
+            return executeSortAllPersonsInAddressBook();
         case COMMAND_DELETE_WORD:
             return executeDeletePerson(commandArgs);
         case COMMAND_CLEAR_WORD:
@@ -470,7 +476,7 @@ public class AddressBook {
     }
 
     /**
-     * Retrieves all persons in the full model whose names contain some of the specified keywords.
+     * Retrieves all persons in the full model whose names contain some of the specified keywords (case insensitive).
      *
      * @param keywords for searching
      * @return list of persons in full model with name containing some of the keywords
@@ -479,7 +485,7 @@ public class AddressBook {
         final ArrayList<String[]> matchedPersons = new ArrayList<>();
         for (String[] person : getAllPersonsInAddressBook()) {
             final Set<String> wordsInName = new HashSet<>(splitByWhitespace(getNameFromPerson(person)));
-            if (!Collections.disjoint(lowercaseCollection(wordsInName), lowercaseCollection(keywords))) {
+            if (!Collections.disjoint(lowercaseSet(wordsInName), lowercaseSet(keywords))) {
                 matchedPersons.add(person);
             }
         }
@@ -487,18 +493,17 @@ public class AddressBook {
     }
 
     /**
-     * Converts all strings in collection to lowercase
+     * Return HashSet containing all strings in an input collection in lowercase form
      *
      * @param input collection containing strings to be converted to lowercase
      * @return HashSet containing all the strings in input converted to lowercase
      */
-    private static Set<String> lowercaseCollection(Collection<String> input) {
-        ArrayList<String> list = new ArrayList<String>(input);
-        ListIterator<String> iter = list.listIterator();
-        while (iter.hasNext()) {
-            iter.set(iter.next().toLowerCase());
+    private static HashSet<String> lowercaseSet(Collection<String> input) {
+        HashSet<String> output = new HashSet<String>();
+        for (String s: input) {
+            output.add(s.toLowerCase());
         }
-        return new HashSet<String>(list);
+        return output;
     }
 
     /**
@@ -585,6 +590,23 @@ public class AddressBook {
         ArrayList<String[]> toBeDisplayed = getAllPersonsInAddressBook();
         showToUser(toBeDisplayed);
         return getMessageForPersonsDisplayedSummary(toBeDisplayed);
+    }
+
+    /**
+     * Displays all persons in the address book to the user; in alphabetical order.
+     *
+     * @return feedback display message for the operation result
+     */
+    private static String executeSortAllPersonsInAddressBook() {
+        ArrayList<String[]> allPersons = getAllPersonsInAddressBook();
+        Comparator<String[]> alphabetical = new Comparator<String[]>() {
+            public int compare(String[] person1, String[] person2) {
+                return getNameFromPerson(person1).compareTo(getNameFromPerson(person2));
+            }
+        };
+        Collections.sort(allPersons, alphabetical);
+        showToUser(allPersons);
+        return getMessageForPersonsDisplayedSummary(allPersons);
     }
 
     /**
@@ -1093,6 +1115,7 @@ public class AddressBook {
         return getUsageInfoForAddCommand() + LS
                 + getUsageInfoForFindCommand() + LS
                 + getUsageInfoForViewCommand() + LS
+                + getUsageInfoForSortCommand() + LS
                 + getUsageInfoForDeleteCommand() + LS
                 + getUsageInfoForClearCommand() + LS
                 + getUsageInfoForExitCommand() + LS
@@ -1130,6 +1153,12 @@ public class AddressBook {
     private static String getUsageInfoForViewCommand() {
         return String.format(MESSAGE_COMMAND_HELP, COMMAND_LIST_WORD, COMMAND_LIST_DESC) + LS
                 + String.format(MESSAGE_COMMAND_HELP_EXAMPLE, COMMAND_LIST_EXAMPLE) + LS;
+    }
+
+    /** Returns the string for showing 'sort' command usage instruction */
+    private static String getUsageInfoForSortCommand() {
+        return String.format(MESSAGE_COMMAND_HELP, COMMAND_SORT_WORD, COMMAND_SORT_DESC) + LS
+                + String.format(MESSAGE_COMMAND_HELP_EXAMPLE, COMMAND_SORT_EXAMPLE) + LS;
     }
 
     /** Returns string for showing 'help' command usage instruction */
